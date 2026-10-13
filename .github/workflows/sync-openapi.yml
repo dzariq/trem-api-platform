@@ -1,0 +1,90 @@
+name: Sync OpenAPI + changelog + docs
+
+on:
+  schedule:
+    - cron: "0 2 * * 1-5"
+  workflow_dispatch:
+  push:
+    paths:
+      - "openapi-admin.json"
+      - "scripts/**"
+      - ".github/workflows/sync-openapi.yml"
+      - "docs/**"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-openapi
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch live OpenAPI
+        env:
+          TREM_API_BASE_URL: ${{ vars.TREM_API_BASE_URL }}
+        run: bash scripts/fetch-openapi.sh
+
+      - name: Diff changelog (oasdiff)
+        run: bash scripts/changelog-diff.sh
+
+      - name: Build docs
+        run: bash scripts/build-docs.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-artifacts
+          path: |
+            artifacts/
+            docs/dist/
+            openapi-admin.json
+            openapi/CHANGELOG.draft.md
+
+      - name: Open PR when OpenAPI changed
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          changed="$(cat artifacts/openapi-changed.txt || echo 0)"
+          if [[ "$changed" != "1" ]]; then
+            echo "No OpenAPI change — skip PR"
+            exit 0
+          fi
+          branch="chore/openapi-sync-$(date -u +%Y%m%d)"
+          git config user.name "trem-bot"
+          git config user.email "trem-bot@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add openapi-admin.json openapi.json fern/openapi/openapi.json \
+            openapi/snapshots/openapi-admin.prev.json openapi/CHANGELOG.draft.md \
+            docs/index.html docs/openapi-admin.json || true
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "chore: sync OpenAPI from live Admin API"
+          git push -u origin "$branch" --force
+          body_file="$(mktemp)"
+          {
+            echo "## Summary"
+            echo "- Fetched live Admin OpenAPI"
+            echo "- Draft changelog in \`openapi/CHANGELOG.draft.md\`"
+            echo "- Rebuilt Scalar docs under \`docs/\`"
+            echo ""
+            echo "## Follow-up (SDK)"
+            echo "1. Review changelog draft"
+            echo "2. \`fern generate --group local\`"
+            echo "3. Update SDK CHANGELOG + \`./scripts/release-sdk.sh x.y.z\`"
+            echo ""
+            echo "## Changelog preview"
+            echo '```'
+            head -n 80 openapi/CHANGELOG.draft.md || true
+            echo '```'
+          } > "$body_file"
+          gh pr create --title "chore: sync Trem Admin OpenAPI" --body-file "$body_file" \
+            || gh pr view --json url -q .url

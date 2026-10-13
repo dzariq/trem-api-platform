@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://schema.buildwithfern.dev/generators-yml.json
+api:
+  specs:
+    - openapi: openapi/openapi.json
+default-group: local
+groups:
+  # Local generate into this workspace
+  local:
+    generators:
+      - name: fern-typescript-sdk
+        output:
+          location: local-file-system
+          path: ../sdks/typescript
+        version: 3.105.1
+
+  # Hosted SDK repo + GitHub Packages (@dzariq/trem-api)
+  # After `fern login`, run: fern generate --group ts-sdk --version 0.1.1
+  ts-sdk:
+    generators:
+      - name: fern-typescript-sdk
+        version: 3.105.1
+        output:
+          location: npm
+          package-name: "@dzariq/trem-api"
+          url: https://npm.pkg.github.com
+          token: ${GITHUB_TOKEN}
+        config:
+          namespaceExport: TremApiClient
+        github:
+          repository: dzariq/trem-api
+          mode: push
+          branch: generated

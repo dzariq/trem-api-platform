@@ -1,0 +1,18 @@
+{
+  "name": "trem-api-platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Trem API provider toolkit: OpenAPI sync, docs, changelog diff, regression tests",
+  "scripts": {
+    "fetch:openapi": "bash scripts/fetch-openapi.sh",
+    "docs:build": "bash scripts/build-docs.sh",
+    "docs:serve": "npx --yes serve docs/dist -l 4173",
+    "changelog:diff": "bash scripts/changelog-diff.sh",
+    "test:regression": "bash scripts/regression-test.sh",
+    "sync": "npm run fetch:openapi && npm run changelog:diff && npm run docs:build",
+    "ci:local": "npm run sync && npm run test:regression"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

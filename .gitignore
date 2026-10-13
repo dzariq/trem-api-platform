@@ -1,0 +1,22 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.npmrc
+*.tsbuildinfo
+
+# Nested SDK repo (published separately as dzariq/trem-api)
+sdks/typescript/
+sdks/typescript-fetch/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Tool caches / artifacts
+.openapi-tmp/
+artifacts/
+docs/dist/
+.hypothesis/
