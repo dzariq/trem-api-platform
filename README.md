@@ -55,15 +55,26 @@ fern generate --group local
 
 ## GitHub setup
 
-1. Create/push this folder to **`dzariq/trem-api-platform`**
-2. Enable **GitHub Pages** (source: GitHub Actions)
+Repo: **https://github.com/dzariq/trem-api-platform**
+
+1. Enable Actions workflows (needs `workflow` scope once):
+
+```bash
+gh auth refresh -h github.com -s workflow,write:packages
+mkdir -p .github/workflows
+cp ci-templates/*.yml .github/workflows/
+git add .github/workflows && git commit -m "Enable CI workflows" && git push
+```
+
+2. Enable **GitHub Pages** → Source: **GitHub Actions**
 3. Repo **Secrets**: `TREM_ADMIN_EMAIL`, `TREM_ADMIN_PASSWORD` (regression)
 4. Repo **Variables** (optional): `TREM_API_BASE_URL`, `STRICT_REGRESSION=1`
 
-Workflows:
+CI templates (copy into `.github/workflows/`):
 
-- `.github/workflows/sync-openapi.yml` — fetch OpenAPI, changelog, docs, open PR if changed
-- `.github/workflows/regression.yml` — Schemathesis against stg
+- `ci-templates/sync-openapi.yml` — fetch OpenAPI, changelog, docs, open PR if changed
+- `ci-templates/regression.yml` — Schemathesis against stg
+- `ci-templates/docs-pages.yml` — deploy Scalar docs to GitHub Pages
 
 ## Layout
 
