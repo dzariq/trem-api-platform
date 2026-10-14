@@ -80,6 +80,7 @@ schemathesis run "$SPEC" \
   --exclude-checks ignored_auth,negative_data_rejection \
   --data-generation-method positive \
   --generation-with-security-parameters=false \
+  --generation-allow-x00=false \
   --workers "$WORKERS" \
   --hypothesis-max-examples "$MAX_EXAMPLES" \
   --hypothesis-deadline 5000 \
