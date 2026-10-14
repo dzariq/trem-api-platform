@@ -6,7 +6,7 @@ on:
     - cron: "30 2 * * 1-5"
   pull_request:
     paths:
-      - "openapi-admin.json"
+      - "openapi.json"
       - "scripts/regression-test.sh"
       - "scripts/build-regression-report.py"
       - "scripts/attach-regression-to-docs.sh"
@@ -46,14 +46,14 @@ jobs:
             bash scripts/fetch-openapi.sh
           fi
 
-      - name: Run Schemathesis
+      - name: Run Schemathesis (public API only)
         env:
           TREM_API_BASE_URL: ${{ vars.TREM_API_BASE_URL }}
-          TREM_ADMIN_EMAIL: ${{ secrets.TREM_ADMIN_EMAIL }}
-          TREM_ADMIN_PASSWORD: ${{ secrets.TREM_ADMIN_PASSWORD }}
+          TREM_USER_EMAIL: ${{ secrets.TREM_USER_EMAIL }}
+          TREM_USER_PASSWORD: ${{ secrets.TREM_USER_PASSWORD }}
           SCHEMATHESIS_MAX_EXAMPLES: "10"
           STRICT_REGRESSION: ${{ vars.STRICT_REGRESSION }}
-        run: bash scripts/regression-test.sh
+        run: bash scripts/regression-test.sh openapi.json
 
       - name: Upload report artifact
         if: always()

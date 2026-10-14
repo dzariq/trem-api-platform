@@ -154,13 +154,15 @@ def render(data: dict, meta: dict) -> str:
 </head>
 <body>
   <main>
-    <h1>Trem API regression</h1>
+    <h1>Trem Public API regression</h1>
     <p class="meta">
       Generated {html.escape(meta.get("generated", ""))}<br/>
+      Suite: <strong>public only</strong> (not admin)<br/>
       Base URL: <code>{html.escape(meta.get("base_url", ""))}</code><br/>
       Spec: <code>{html.escape(meta.get("spec", ""))}</code>
       · Auth: <code>{html.escape(meta.get("auth", "none"))}</code><br/>
       <a href="../">← Docs home</a>
+      · <a href="../public/">Public API docs</a>
       · <a href="https://github.com/dzariq/trem-api-platform/actions">GitHub Actions</a>
     </p>
 
@@ -220,11 +222,13 @@ def main() -> None:
         raise SystemExit(f"Missing JUnit report: {junit}")
 
     data = parse_junit(junit)
-    auth = "admin bearer" if os.environ.get("TREM_ADMIN_EMAIL") else "none (expect many 401s)"
+    auth = os.environ.get("TREM_REGRESSION_AUTH") or (
+        "public bearer" if os.environ.get("TREM_USER_EMAIL") else "none (expect some 401s)"
+    )
     meta = {
         "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "base_url": args.base_url or "https://tremstgapi.axcova.com",
-        "spec": args.spec,
+        "spec": args.spec or "openapi.json",
         "auth": auth,
     }
 

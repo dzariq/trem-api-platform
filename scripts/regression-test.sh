@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
-# Schema regression: Schemathesis validates live API responses against OpenAPI.
-# Auth: optional login via TREM_ADMIN_EMAIL / TREM_ADMIN_PASSWORD.
+# Schema regression — PUBLIC API only (openapi.json from /api/docs-json).
+# Optional auth: TREM_USER_EMAIL / TREM_USER_PASSWORD → POST /api/auth/login
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 BASE_URL="${TREM_API_BASE_URL:-https://tremstgapi.axcova.com}"
-SPEC="${1:-openapi-admin.json}"
+SPEC="${1:-openapi.json}"
 MAX_EXAMPLES="${SCHEMATHESIS_MAX_EXAMPLES:-10}"
 WORKERS="${SCHEMATHESIS_WORKERS:-2}"
 
 if [[ ! -f "$SPEC" ]]; then
   echo "Missing $SPEC — run npm run fetch:openapi first" >&2
+  exit 1
+fi
+
+if [[ "$(basename "$SPEC")" == "openapi-admin.json" ]]; then
+  echo "Public-only suite — pass openapi.json, not openapi-admin.json" >&2
   exit 1
 fi
 
@@ -31,20 +36,31 @@ else
 fi
 
 AUTH_ARGS=()
+export TREM_REGRESSION_API="public"
+export TREM_REGRESSION_AUTH="none"
 
-if [[ -n "${TREM_ADMIN_EMAIL:-}" && -n "${TREM_ADMIN_PASSWORD:-}" ]]; then
-  echo "Logging in as ${TREM_ADMIN_EMAIL}…"
-  login_json="$(curl -fsS -X POST "${BASE_URL}/api/admin/auth/login" \
+EMAIL="${TREM_USER_EMAIL:-}"
+PASSWORD="${TREM_USER_PASSWORD:-}"
+
+if [[ -n "$EMAIL" && -n "$PASSWORD" ]]; then
+  echo "Logging in (public) as ${EMAIL}…"
+  if login_json="$(curl -fsS -X POST "${BASE_URL}/api/auth/login" \
     -H 'Content-Type: application/json' \
-    -d "{\"email\":\"${TREM_ADMIN_EMAIL}\",\"password\":\"${TREM_ADMIN_PASSWORD}\"}")"
-  token="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["access_token"])' <<<"$login_json")"
-  AUTH_ARGS=(-H "Authorization: Bearer ${token}")
-  echo "Auth header ready"
+    -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")"; then
+    token="$(printf '%s' "$login_json" | python3 -c 'import json,sys; b=json.load(sys.stdin); d=b.get("data") or b; t=d.get("access_token") or d.get("accessToken"); assert t; print(t)')"
+    AUTH_ARGS=(-H "Authorization: Bearer ${token}")
+    export TREM_REGRESSION_AUTH="public bearer"
+    echo "Auth header ready (public bearer)"
+  else
+    echo "Public login failed — continuing unauthenticated" >&2
+  fi
 else
-  echo "No TREM_ADMIN_EMAIL/PASSWORD — unauthenticated run (many auth failures expected)."
+  echo "No TREM_USER_EMAIL/PASSWORD — unauthenticated public run (some 401s expected)."
 fi
 
 REPORT="artifacts/schemathesis-junit.xml"
+
+echo "Running Schemathesis against PUBLIC OpenAPI: $SPEC → $BASE_URL"
 
 set +e
 schemathesis run "$SPEC" \
@@ -53,15 +69,14 @@ schemathesis run "$SPEC" \
   --workers "$WORKERS" \
   --hypothesis-max-examples "$MAX_EXAMPLES" \
   --hypothesis-deadline 5000 \
-  --exclude-path-regex 'upload|delete|bulk|apply-setup|asset' \
-  --include-path-regex '^/api/admin/(auth/login|shows|venues|articles|cron-jobs)' \
+  --exclude-path-regex 'upload|webhook' \
   ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
   --junit-xml "$REPORT" \
   2>&1 | tee artifacts/schemathesis.log
 code=${PIPESTATUS[0]}
 set -e
 
-echo "Schemathesis exit: $code (report: $REPORT)"
+echo "Schemathesis exit: $code (report: $REPORT) [public API]"
 
 if [[ -f "$REPORT" ]]; then
   python3 scripts/build-regression-report.py \

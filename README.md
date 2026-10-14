@@ -67,7 +67,7 @@ git add .github/workflows && git commit -m "Enable CI workflows" && git push
 ```
 
 2. Enable **GitHub Pages** → Source: **GitHub Actions**
-3. Repo **Secrets**: `TREM_ADMIN_EMAIL`, `TREM_ADMIN_PASSWORD` (regression)
+3. Repo **Secrets** (public regression auth): `TREM_USER_EMAIL`, `TREM_USER_PASSWORD`
 4. Repo **Variables** (optional): `TREM_API_BASE_URL`, `STRICT_REGRESSION=1`
 
 CI templates (copy into `.github/workflows/`):

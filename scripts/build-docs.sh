@@ -212,8 +212,8 @@ if [[ ! -f docs/dist/regression/index.html ]]; then
   </style>
 </head>
 <body>
-  <h1>Regression report</h1>
-  <p>Latest HTML report is published by the <strong>OpenAPI regression</strong> GitHub Action.</p>
+  <h1>Public API regression report</h1>
+  <p>Latest HTML report is published by the <strong>OpenAPI regression</strong> GitHub Action (public OpenAPI only).</p>
   <p><a href="https://github.com/dzariq/trem-api-platform/actions/workflows/regression.yml">Run / view workflow</a>
      · <a href="../">← Docs home</a></p>
 </body>
