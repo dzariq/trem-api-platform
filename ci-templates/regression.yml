@@ -9,7 +9,15 @@ on:
       - "openapi-admin.json"
       - "scripts/regression-test.sh"
       - "scripts/build-regression-report.py"
+      - "scripts/attach-regression-to-docs.sh"
       - "requirements-regression.txt"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/regression.yml"
+      - "scripts/regression-test.sh"
+      - "scripts/build-regression-report.py"
+      - "scripts/attach-regression-to-docs.sh"
 
 permissions:
   contents: read
@@ -56,30 +64,7 @@ jobs:
 
       - name: Build docs site + attach regression UI
         if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: |
-          bash scripts/build-docs.sh
-          mkdir -p docs/dist/regression
-          if [[ -d artifacts/regression-report ]]; then
-            cp -R artifacts/regression-report/. docs/dist/regression/
-          else
-            echo '<!doctype html><title>No report</title><p>No regression report generated.</p>' > docs/dist/regression/index.html
-          fi
-          # Landing link (idempotent inject if missing)
-          if ! grep -q 'href="./regression/"' docs/dist/index.html; then
-            python3 - <<'PY'
-from pathlib import Path
-p = Path("docs/dist/index.html")
-html = p.read_text()
-needle = '<p class="links">'
-inject = '''<p class="links">
-        <a href="./regression/">Regression report</a>
-        ·
-'''
-if needle in html and 'href="./regression/"' not in html:
-    html = html.replace(needle, inject, 1)
-    p.write_text(html)
-PY
-          fi
+        run: bash scripts/attach-regression-to-docs.sh
 
       - name: Upload Pages artifact
         if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
