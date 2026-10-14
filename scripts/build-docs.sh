@@ -196,6 +196,31 @@ cat > docs/dist/index.html <<'HTML'
 </html>
 HTML
 
+# Placeholder regression page (full report is written by attach-regression-to-docs.sh / CI)
+mkdir -p docs/dist/regression
+if [[ ! -f docs/dist/regression/index.html ]]; then
+  cat > docs/dist/regression/index.html <<'HTML'
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trem regression</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, sans-serif; background: #0f1117; color: #e8eaed; padding: 2rem; }
+    a { color: #8ab4ff; }
+  </style>
+</head>
+<body>
+  <h1>Regression report</h1>
+  <p>Latest HTML report is published by the <strong>OpenAPI regression</strong> GitHub Action.</p>
+  <p><a href="https://github.com/dzariq/trem-api-platform/actions/workflows/regression.yml">Run / view workflow</a>
+     · <a href="../">← Docs home</a></p>
+</body>
+</html>
+HTML
+fi
+
 # Keep copies under docs/ for convenience in git
 mkdir -p docs/admin docs/public
 cp docs/dist/index.html docs/index.html
@@ -210,3 +235,4 @@ echo "Docs built → docs/dist/"
 echo "  Landing:  docs/dist/index.html"
 echo "  Admin:    docs/dist/admin/"
 echo "  Public:   docs/dist/public/"
+echo "  Regression: docs/dist/regression/"
