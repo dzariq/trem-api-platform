@@ -8,10 +8,17 @@ on:
     paths:
       - "openapi-admin.json"
       - "scripts/regression-test.sh"
+      - "scripts/build-regression-report.py"
       - "requirements-regression.txt"
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   schemathesis:
@@ -40,9 +47,53 @@ jobs:
           STRICT_REGRESSION: ${{ vars.STRICT_REGRESSION }}
         run: bash scripts/regression-test.sh
 
-      - name: Upload report
+      - name: Upload report artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: schemathesis-report
           path: artifacts/
+
+      - name: Build docs site + attach regression UI
+        if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          bash scripts/build-docs.sh
+          mkdir -p docs/dist/regression
+          if [[ -d artifacts/regression-report ]]; then
+            cp -R artifacts/regression-report/. docs/dist/regression/
+          else
+            echo '<!doctype html><title>No report</title><p>No regression report generated.</p>' > docs/dist/regression/index.html
+          fi
+          # Landing link (idempotent inject if missing)
+          if ! grep -q 'href="./regression/"' docs/dist/index.html; then
+            python3 - <<'PY'
+from pathlib import Path
+p = Path("docs/dist/index.html")
+html = p.read_text()
+needle = '<p class="links">'
+inject = '''<p class="links">
+        <a href="./regression/">Regression report</a>
+        ·
+'''
+if needle in html and 'href="./regression/"' not in html:
+    html = html.replace(needle, inject, 1)
+    p.write_text(html)
+PY
+          fi
+
+      - name: Upload Pages artifact
+        if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/dist
+
+  deploy-report:
+    needs: schemathesis
+    if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

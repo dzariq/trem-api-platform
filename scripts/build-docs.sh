@@ -183,6 +183,8 @@ cat > docs/dist/index.html <<'HTML'
         </a>
       </div>
       <p class="links">
+        <a href="./regression/">Regression report</a>
+        ·
         <a href="https://github.com/dzariq/trem-api-platform/blob/main/docs/BEGINNER-GUIDE.md">Beginner guide</a>
         ·
         <a href="https://github.com/dzariq/trem-api">TypeScript SDK</a>

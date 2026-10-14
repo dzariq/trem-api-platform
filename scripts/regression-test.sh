@@ -62,6 +62,16 @@ code=${PIPESTATUS[0]}
 set -e
 
 echo "Schemathesis exit: $code (report: $REPORT)"
+
+if [[ -f "$REPORT" ]]; then
+  python3 scripts/build-regression-report.py \
+    --junit "$REPORT" \
+    --out-dir artifacts/regression-report \
+    --base-url "$BASE_URL" \
+    --spec "$SPEC"
+  echo "HTML report: artifacts/regression-report/index.html"
+fi
+
 if [[ "${STRICT_REGRESSION:-0}" == "1" ]]; then
   exit "$code"
 fi
