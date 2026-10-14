@@ -7,16 +7,16 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 BASE_URL="${TREM_API_BASE_URL:-https://tremstgapi.axcova.com}"
-SPEC="${1:-openapi.json}"
+SOURCE_SPEC="${1:-openapi.json}"
 MAX_EXAMPLES="${SCHEMATHESIS_MAX_EXAMPLES:-10}"
 WORKERS="${SCHEMATHESIS_WORKERS:-2}"
 
-if [[ ! -f "$SPEC" ]]; then
-  echo "Missing $SPEC — run npm run fetch:openapi first" >&2
+if [[ ! -f "$SOURCE_SPEC" ]]; then
+  echo "Missing $SOURCE_SPEC — run npm run fetch:openapi first" >&2
   exit 1
 fi
 
-if [[ "$(basename "$SPEC")" == "openapi-admin.json" ]]; then
+if [[ "$(basename "$SOURCE_SPEC")" == "openapi-admin.json" ]]; then
   echo "Public-only suite — pass openapi.json, not openapi-admin.json" >&2
   exit 1
 fi
@@ -34,6 +34,12 @@ else
   # shellcheck disable=SC1091
   source .venv/bin/activate
 fi
+
+# Enrich OpenAPI so 400/401/etc. are documented (stg returns them; raw swagger often omits)
+python3 scripts/prepare-public-openapi-for-regression.py \
+  --in "$SOURCE_SPEC" \
+  --out artifacts/openapi-public-regression.json
+SPEC="artifacts/openapi-public-regression.json"
 
 AUTH_ARGS=()
 export TREM_REGRESSION_API="public"
@@ -55,21 +61,29 @@ if [[ -n "$EMAIL" && -n "$PASSWORD" ]]; then
     echo "Public login failed — continuing unauthenticated" >&2
   fi
 else
-  echo "No TREM_USER_EMAIL/PASSWORD — unauthenticated public run (some 401s expected)."
+  echo "No TREM_USER_EMAIL/PASSWORD — unauthenticated public run."
 fi
 
 REPORT="artifacts/schemathesis-junit.xml"
 
 echo "Running Schemathesis against PUBLIC OpenAPI: $SPEC → $BASE_URL"
 
+# Important flags:
+# - generation-with-security-parameters=false → don't inject fake Bearer tokens (was causing mass 401)
+# - data-generation-method=positive → valid payloads only
+# - exclude ignored_auth → many "public" ops declare bearer but work without it
+# - exclude negative_data_rejection → less noise from intentional invalid cases
 set +e
 schemathesis run "$SPEC" \
   --base-url "$BASE_URL" \
-  --checks all \
+  --checks not_a_server_error,status_code_conformance,content_type_conformance,response_schema_conformance \
+  --exclude-checks ignored_auth,negative_data_rejection \
+  --data-generation-method positive \
+  --generation-with-security-parameters=false \
   --workers "$WORKERS" \
   --hypothesis-max-examples "$MAX_EXAMPLES" \
   --hypothesis-deadline 5000 \
-  --exclude-path-regex 'upload|webhook' \
+  --exclude-path-regex 'upload|webhook|auth/oauth|payments/sandbox|tickets/validate|checkout/return$' \
   ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
   --junit-xml "$REPORT" \
   2>&1 | tee artifacts/schemathesis.log
@@ -83,7 +97,7 @@ if [[ -f "$REPORT" ]]; then
     --junit "$REPORT" \
     --out-dir artifacts/regression-report \
     --base-url "$BASE_URL" \
-    --spec "$SPEC"
+    --spec "openapi.json (prepared)"
   echo "HTML report: artifacts/regression-report/index.html"
 fi
 

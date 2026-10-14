@@ -8,6 +8,7 @@ on:
     paths:
       - "openapi.json"
       - "scripts/regression-test.sh"
+      - "scripts/prepare-public-openapi-for-regression.py"
       - "scripts/build-regression-report.py"
       - "scripts/attach-regression-to-docs.sh"
       - "requirements-regression.txt"
@@ -16,6 +17,7 @@ on:
     paths:
       - ".github/workflows/regression.yml"
       - "scripts/regression-test.sh"
+      - "scripts/prepare-public-openapi-for-regression.py"
       - "scripts/build-regression-report.py"
       - "scripts/attach-regression-to-docs.sh"
 
