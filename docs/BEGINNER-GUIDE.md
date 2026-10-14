@@ -104,7 +104,9 @@ Repo: **trem-api-platform** — GitHub Actions run in the cloud:
 | **Regression** | Schemathesis: generate requests from OpenAPI, check responses match schema | Cron + PR + manual |
 | **Docs Pages** | Publish Scalar API reference website | Push / manual |
 
-**Docs site:** https://dzariq.github.io/trem-api-platform/
+**Docs site:** https://dzariq.github.io/trem-api-platform/  
+- Admin: https://dzariq.github.io/trem-api-platform/admin/  
+- Public: https://dzariq.github.io/trem-api-platform/public/
 
 ---
 

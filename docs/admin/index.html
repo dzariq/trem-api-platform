@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trem Admin API</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #0f1117; color: #e8eaed; }
+      #boot {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        padding: 1.5rem;
+        max-width: 40rem;
+      }
+      #boot a { color: #8ab4ff; }
+      #boot.hidden { display: none; }
+      .top {
+        position: sticky; top: 0; z-index: 50;
+        display: flex; gap: 1rem; align-items: center;
+        padding: 0.65rem 1rem;
+        background: rgba(15,17,23,0.92);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 0.9rem;
+      }
+      .top a { color: #8ab4ff; text-decoration: none; }
+      .top strong { color: #fff; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <nav class="top">
+      <a href="../">← All APIs</a>
+      <strong>Trem Admin API</strong>
+    </nav>
+    <div id="boot">
+      <p>Loading Trem Admin API…</p>
+      <p>Raw spec: <a href="./openapi.json">openapi.json</a></p>
+    </div>
+    <script
+      id="api-reference"
+      data-url="./openapi.json"
+      data-configuration='{"theme":"kepler","layout":"modern","hideModels":false,"showSidebar":true}'
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.74.0/dist/browser/standalone.js"
+      onload="document.getElementById('boot')?.classList.add('hidden')"
+      onerror="document.getElementById('boot').innerHTML='<p><strong>Failed to load Scalar CDN.</strong> Spec: <a href=./openapi.json>openapi.json</a></p>'"
+    ></script>
+  </body>
+</html>
