@@ -55,7 +55,7 @@ schemathesis run "$SPEC" \
   --hypothesis-deadline 5000 \
   --exclude-path-regex 'upload|delete|bulk|apply-setup|asset' \
   --include-path-regex '^/api/admin/(auth/login|shows|venues|articles|cron-jobs)' \
-  "${AUTH_ARGS[@]}" \
+  ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
   --junit-xml "$REPORT" \
   2>&1 | tee artifacts/schemathesis.log
 code=${PIPESTATUS[0]}
